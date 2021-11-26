@@ -5,162 +5,152 @@
 #include<assert.h>
 #include<stdbool.h>
 
+//function that creates a new node in the tree
+struct tree_node * createNode(int value)
+{
+  //alocates size of the structs.
+    struct tree_node *new = malloc(sizeof(struct tree_node));
 
+      //sets item to value and the l and r pointers to NULL.
+      new->item = value;
+      new->left = NULL;
+      new->right= NULL;
+
+    return new;
+};
+//Function tha finds smallest node
+int smallestNode(struct tree_node *t)
+{
+  struct tree_node* temp = t;
+//runs through left side of binary until incounters null, bc the most left item will always be the smallest
+  while(t->left != NULL)
+  {
+    temp = t->left;
+  }
+    return temp->item;
+}
+
+// Insert item x into the tree t
 struct tree_node * Insert (int x, struct tree_node *t)
-{
-if (Empty(t) == 1){
-  struct tree_node *leaf = malloc(sizeof(struct tree_node));
-  leaf->item = x;
-  leaf->left = NULL;
-  leaf->right = NULL;
-  t->left = leaf;
-  t->right = leaf;
-  }
-if (Empty(t) == 0){
-  bool isinsert = 0;
-  struct tree_node* current = t->left;
-  while (isinsert == 0)
+{  
+  //If the pointer passed is NULL it will create a node and insert x 
+  if(t == NULL)
   {
-  if (current->item > x){
-    if (current->left !=NULL)
-    {
-      current = current->left;
-    }
-      else{
-        struct tree_node *leaf = malloc(sizeof(struct tree_node));
-        current->left = leaf;
-        leaf->item = x;
-        leaf->left = leaf->right = NULL;
-        isinsert = 1;        
-      }
+    return createNode(x);
   }
-    if (current->item < x){
-    if (current->right !=NULL)
-    {
-      current = current->right;
-    }
-      else{
-        struct tree_node *leaf = malloc(sizeof(struct tree_node));
-        current->right = leaf;
-        leaf->item = x;
-        leaf->left = leaf->right = NULL;
-        isinsert = 1;        
-      }
-  }
-  
-    
-  }
-
-}
-
-  return NULL;
-}
-
-struct tree_node * Remove (int x, struct tree_node *t)
-{
- // Remove one item from the tree t
-  if (Empty(1))
-  return 0;
-  
-  if (x == t->item)
+//if x is bigger than item, then  the right child pointer is passed to insert as a recusive function
+  if(x > t->item)
   {
-    if (t->left == NULL && t->right == NULL)
-    {
-    free (t);
-    return 0;
-    }
-
-    else if (t->right && t->left)
-    {
-      struct tree_node *lefttemp = t->left;
-      struct tree_node *righttemp = t->right;
-
-      t->item = lefttemp->item;
-      t->left = lefttemp->left;
-      t->right = lefttemp->right;
-
-      struct tree_node *c = t;
-      while (c->right)
-      {
-        c = c->right; 
-        c->right = righttemp;
-        free(lefttemp);
-      }
-    }
-    else
-    {
-      struct tree_node *child;
-      (t->left) ? (child = t->left) : (child = t->right);
-    
-      t->item = child->item;
-      t->left = child->left;
-      t->right = child->right;
-
-      free (child);    
+    t->right = Insert(x,t->right);
   }
-    if (x < t->item)
-    {
-      t->left = Remove(x,t->left);
-    }
-    if (x > t->item)
-    {
-      t->right = Remove(x,t->right);
-    }
+  else
+  //if x is smaller than item, then the left child pointer is passed to insert as a recusive function
+  {
+    t->left = Insert(x,t->left);
+  }
   return t;
 }
 
+// Removes one item from the tree t
+struct tree_node * Remove (int x, struct tree_node *t)
+{
+  //Incase tree is empty, the empty tree is returned
+  if (t == NULL)
+  {
+    return t;
+  }
+  //Recursive call to go through the tree until x is found
+  if(x > t->item)
+  {
+    t->right = Remove(x, t->right);
+  }
+  else if(x < t->item)
+  {
+    t->left = Remove(x, t->left);
+  }
+  // If the node we are looking for has no children, the node is freed
+  // and the new tree is returned
+  else if (t->left == NULL && t->right == NULL)
+  {
+    free(t);
+    return NULL;
+  }
+  else if(t->right == NULL || t->left == NULL)
+  {
+    struct tree_node * temp_t = NULL;
+    //If only one child is present, it is saved in a temporary value and transfered, and the node is deleted
+    if (t->right == NULL)
+    {
+      temp_t = t->left;
+    }
+    else if(t->left == NULL)
+    {
+      temp_t = t->right;
+    }
+      free(t);
+      return temp_t;
+  }
+  else
+  {
+    // Smallest node on right side is found, and the value of t->item
+    // is changed to the replacement value, and the original node is removed
+    int smallest = smallestNode(t->right);
 
+    t->item = smallest;
+
+    t->right = Remove(t->item,t->right);  
+  }
+  return t;
+}
+
+// Check if a certain number is contained in the tree
 int Contains (int x, struct tree_node *t)
 {
-   while (1)
-  {
-    if (t==NULL)
+  //If the tree is empty, the empty tree is returned
+  if(t == NULL)
     {
-      return false;
-    }
-
-    if (t->item==x)
+      return 0;
+    } 
+  //Base case
+  if(t->item == x)
     {
       return 1;
     }
-    
-
-    if (t->item>x)
+  //Function is recursively called on the left side if x is smaller, and on the right otherwise
+  else if(x < t->item)
     {
-      t=t->left;
+      return Contains(x,t->left);
     }
-    
-    if (t->item<x)
+  else
     {
-      t=t->right;
+      return Contains(x,t->right);
     }
-  }
-return 0;
+  //Function returns true if the tree contains x, otherwise returns false
 }
-  // Return true if the tree t contains item x. Return false otherwise.
 
-
-
+// Create an empty tree
 struct tree_node * Initialize (struct tree_node *t)
+
 {
-  t->left = NULL;
-  t->right = NULL;
-  // Create an empty tree
-  return NULL;
+  t = NULL;
+  return t;
 }
 
+// Test if empty
 int Empty (struct tree_node *t)
 {
-  // Test if empty
-  if (t->left == NULL && t->right == NULL)
-  return 1;
+  //if t == NULL the tree must be empty, and true is returned
+  if (t == NULL)
+    return 1;
   else
-  return 0;
-  
+  //Otherwise false is returned
+    return 0;
 }
 
-// int Full (struct tree_node *t)
-// {
-//     // Test if full
-//     return 0;
-// } The tree can never be full
+/*it will always be able to accept more inputs until the pc runs out of memory 
+bc it is dynamically allocated memory.
+*/
+int Full (struct tree_node *t)
+{
+  return 0;
+}
